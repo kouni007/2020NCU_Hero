@@ -1,0 +1,30 @@
+1.由于很多次进入HAL_Delay（）卡死
+__weak void HAL_Delay(uint32_t Delay)
+{
+  uint32_t tickstart = HAL_GetTick();
+  uint32_t wait = Delay;
+
+  /* Add a freq to guarantee minimum wait */
+  if (wait < HAL_MAX_DELAY)
+  {
+    wait += (uint32_t)(uwTickFreq);
+  }
+
+  * while((HAL_GetTick() - tickstart) < wait)
+  {
+  }
+} 发现卡死在*中（偶尔会卡死，正常循环没有任何异常，但是中断以及其他情况不能使用HAL_Delay（），因为HAL_GetTick()
+在中断SysTick_Handler()获取数值，但是此中断优先级为最低，因此有时HAL_Delay（)获取不到HAL_GetTick()的值，导致卡死
+
+解决方案：重新写void HAL_Delay(uint32_t Delay)函数，覆盖原来函数
+利用正点原子延时方法-------存放在main.c函数里！
+
+2.接收遥控器数据使用
+//		vTaskNotifyGiveFromISR(TestOfUsartHandle,&pxHigherPriorityTaskWoken);
+//		portYIELD_FROM_ISR(pxHigherPriorityTaskWoken);		
+发现卡死在vTaskNotifyGiveFromISR(TestOfUsartHandle,&pxHigherPriorityTaskWoken);进不去此函数
+暂时没想到解决方法！
+
+3.添加了串口8，可以正常使用
+
+4.jy61陀螺仪发现线接反了(TX,RX线接反，但是可以接收数据？！！！）
